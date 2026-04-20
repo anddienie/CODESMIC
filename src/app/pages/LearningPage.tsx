@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { Wrench, Code2, Bug, Puzzle, ArrowRight, Trophy, Star, Zap } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
@@ -11,7 +11,7 @@ const learningFeatures = [
     title: "Fix & Run Lab",
     description: "Tempat eksperimen coding dengan live visual diff",
     details: "Lihat langsung efek dari setiap perubahan kode! Lab ini kasih kamu kode yang broken, dan kamu harus fix sambil lihat preview real-time.",
-    challenges: 25,
+    challenges: 10,
     difficulty: "Beginner",
     color: "from-pink-500 to-rose-500",
     glow: "pink",
@@ -51,7 +51,7 @@ const learningFeatures = [
     difficulty: "Advanced",
     color: "from-emerald-500 to-cyan-500",
     glow: "emerald",
-    route: "/mini-project/1",
+    route: "/mini-project",
     features: ["Progressive Building", "Real Projects", "Reflection Prompts", "Portfolio Ready"],
   },
 ];

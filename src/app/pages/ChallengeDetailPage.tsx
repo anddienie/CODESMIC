@@ -3,8 +3,8 @@ import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { motion } from "motion/react";
-import { Link, useParams } from "react-router";
-import { Clock, Target, Star, ChevronRight, Code, Lightbulb, Play } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { Clock, Star, ChevronRight, Code, Lightbulb, Play, Lock, Unlock, Sparkles } from "lucide-react";
 import { apiRequest } from "../../lib/api";
 
 type QuestionDetail = {
@@ -13,6 +13,7 @@ type QuestionDetail = {
   xp: number;
   subject: string;
   difficulty: string;
+  type: string;
   mini_materi: string;
   task: string;
   code_html: string;
@@ -25,9 +26,15 @@ type QuestionDetail = {
 
 export function ChallengeDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [question, setQuestion] = useState<QuestionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unlockedHints, setUnlockedHints] = useState<number[]>([0]);
+  const [userXp, setUserXp] = useState(150);
+
+  const hintCosts = [0, 5, 10];
+  const showThinkFirst = question && (question.type === "Debugging Zone" || question.type === "Code Challenge Arena");
 
   useEffect(() => {
     if (!id) return;
@@ -45,6 +52,19 @@ export function ChallengeDetailPage() {
 
     fetchQuestion();
   }, [id]);
+
+  const handleUnlockHint = (hintIndex: number) => {
+    if (!unlockedHints.includes(hintIndex) && userXp >= hintCosts[hintIndex]) {
+      setUnlockedHints([...unlockedHints, hintIndex]);
+      setUserXp(userXp - hintCosts[hintIndex]);
+    }
+  };
+
+  const getHintText = (hintIndex: number): string => {
+    if (!question) return "";
+    const hintFields = [question.hint1, question.hint2, question.hint3];
+    return hintFields[hintIndex] || "Hint tidak tersedia";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white relative">
@@ -144,44 +164,46 @@ export function ChallengeDetailPage() {
                   )}
                 </motion.div>
 
-                {/* Analysis Space */}
-                <motion.div
-                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <Lightbulb className="w-6 h-6 text-yellow-400" />
-                    ThinkFirst: Prediksi & Analisis
-                  </h2>
-                  <p className="text-slate-400 mb-4">
-                    Sebelum mulai ngoding, coba prediksi hasilnya dulu dan analisis masalahnya:
-                  </p>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-violet-300 mb-2">
-                        Menurut kamu, hasilnya bakal kayak gimana? 🤔
-                      </label>
-                      <textarea
-                        className="w-full h-32 bg-slate-950/50 border border-violet-500/20 rounded-lg p-4 text-white placeholder-slate-500 focus:border-violet-500/40 focus:outline-none resize-none"
-                        placeholder="Deskripsikan prediksi kamu di sini...&#10;Contoh: 'Kayaknya bakal ada bar horizontal di atas dengan logo di kiri...'"
-                      />
+                {/* Analysis Space - Think First (Conditional) */}
+                {showThinkFirst && (
+                  <motion.div
+                    className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-8"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                      <Lightbulb className="w-6 h-6 text-yellow-400" />
+                      ThinkFirst: Prediksi & Analisis
+                    </h2>
+                    <p className="text-slate-400 mb-4">
+                      Sebelum mulai ngoding, coba prediksi hasilnya dulu dan analisis masalahnya:
+                    </p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-violet-300 mb-2">
+                          Menurut kamu, hasilnya bakal kayak gimana? 🤔
+                        </label>
+                        <textarea
+                          className="w-full h-32 bg-slate-950/50 border border-violet-500/20 rounded-lg p-4 text-white placeholder-slate-500 focus:border-violet-500/40 focus:outline-none resize-none"
+                          placeholder="Deskripsikan prediksi kamu di sini...&#10;Contoh: 'Kayaknya bakal ada bar horizontal di atas dengan logo di kiri...'"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-violet-300 mb-2">
+                          Analisis kamu tentang masalah ini:
+                        </label>
+                        <textarea
+                          className="w-full h-32 bg-slate-950/50 border border-violet-500/20 rounded-lg p-4 text-white placeholder-slate-500 focus:border-violet-500/40 focus:outline-none resize-none"
+                          placeholder="Tulis analisis kamu...&#10;&#10;• Elemen HTML apa aja yang dibutuhin?&#10;• CSS properties apa yang penting?&#10;• Gimana struktur kodenya?&#10;• Challenge apa yang mungkin muncul?"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-violet-300 mb-2">
-                        Analisis kamu tentang masalah ini:
-                      </label>
-                      <textarea
-                        className="w-full h-32 bg-slate-950/50 border border-violet-500/20 rounded-lg p-4 text-white placeholder-slate-500 focus:border-violet-500/40 focus:outline-none resize-none"
-                        placeholder="Tulis analisis kamu...&#10;&#10;• Elemen HTML apa aja yang dibutuhin?&#10;• CSS properties apa yang penting?&#10;• Gimana struktur kodenya?&#10;• Challenge apa yang mungkin muncul?"
-                      />
-                    </div>
-                  </div>
-                  <button className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg font-semibold transition-colors">
-                    Simpan Analisis
-                  </button>
-                </motion.div>
+                    <button className="mt-4 px-6 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg font-semibold transition-colors">
+                      Simpan Analisis
+                    </button>
+                  </motion.div>
+                )}
 
                 {/* Action Buttons */}
                 <motion.div
@@ -190,53 +212,117 @@ export function ChallengeDetailPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <button className="flex-1 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold text-lg shadow-lg shadow-violet-500/50 hover:shadow-violet-500/70 transition-all flex items-center justify-center gap-2 group">
+                  <button
+                    onClick={() => navigate(`/challenge/${id}/editor`)}
+                    className="flex-1 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold text-lg shadow-lg shadow-violet-500/50 hover:shadow-violet-500/70 transition-all flex items-center justify-center gap-2 group"
+                  >
                     <Play className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     Mulai Coding
                   </button>
-                  <Link
-                    to="/hint/1"
-                    className="px-8 py-4 bg-slate-800/50 border border-violet-500/30 rounded-lg font-semibold text-lg hover:bg-slate-800/70 hover:border-violet-500/50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Lightbulb className="w-5 h-5" />
-                    Pakai Hint
-                  </Link>
                 </motion.div>
               </div>
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Resources */}
+                {/* Smart Hints System */}
                 <motion.div
                   className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-6"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <h3 className="text-xl font-bold mb-4">Resource Membantu</h3>
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-yellow-400" />
+                    Hint System
+                  </h3>
                   <div className="space-y-3">
-                    <a
-                      href="#"
-                      className="block p-3 bg-slate-950/50 border border-violet-500/20 rounded-lg hover:border-violet-500/40 transition-colors"
-                    >
-                      <div className="font-semibold text-violet-300 text-sm">Elemen Nav HTML</div>
-                      <div className="text-xs text-slate-400">Dokumentasi MDN</div>
-                    </a>
-                    <a
-                      href="#"
-                      className="block p-3 bg-slate-950/50 border border-violet-500/20 rounded-lg hover:border-violet-500/40 transition-colors"
-                    >
-                      <div className="font-semibold text-violet-300 text-sm">CSS Position Property</div>
-                      <div className="text-xs text-slate-400">Panduan CSS Tricks</div>
-                    </a>
-                    <a
-                      href="#"
-                      className="block p-3 bg-slate-950/50 border border-violet-500/20 rounded-lg hover:border-violet-500/40 transition-colors"
-                    >
-                      <div className="font-semibold text-violet-300 text-sm">Panduan Flexbox</div>
-                      <div className="text-xs text-slate-400">Panduan Lengkap</div>
-                    </a>
+                    {[0, 1, 2].map((hintIndex) => {
+                      const isUnlocked = unlockedHints.includes(hintIndex);
+                      const canUnlock = hintIndex === 0 || unlockedHints.includes(hintIndex - 1);
+                      const cost = hintCosts[hintIndex];
+
+                      return (
+                        <motion.div
+                          key={hintIndex}
+                          className={`border rounded-lg p-4 transition-all ${
+                            isUnlocked
+                              ? "border-yellow-500/40 bg-yellow-500/10"
+                              : canUnlock
+                              ? "border-violet-500/30 bg-slate-950/50 hover:border-violet-500/50"
+                              : "border-slate-700/30 bg-slate-950/30 opacity-60"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  isUnlocked
+                                    ? "bg-gradient-to-br from-yellow-500 to-orange-500"
+                                    : canUnlock
+                                    ? "bg-gradient-to-br from-violet-500 to-purple-500"
+                                    : "bg-slate-800"
+                                }`}
+                              >
+                                {isUnlocked ? (
+                                  <Unlock className="w-3 h-3 text-white" />
+                                ) : (
+                                  <Lock className="w-3 h-3 text-white" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-white">
+                                  Hint {hintIndex + 1}
+                                </p>
+                                {cost > 0 && !isUnlocked && (
+                                  <span className="text-xs text-slate-400">{cost} XP</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {isUnlocked ? (
+                            <motion.div
+                              className="mt-2 p-3 bg-slate-950/50 border border-yellow-500/20 rounded text-sm text-slate-200"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              {getHintText(hintIndex)}
+                            </motion.div>
+                          ) : canUnlock ? (
+                            <button
+                              onClick={() => handleUnlockHint(hintIndex)}
+                              disabled={userXp < cost}
+                              className={`mt-2 w-full px-3 py-2 rounded text-xs font-semibold transition-all ${
+                                userXp >= cost
+                                  ? "bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+                                  : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                              }`}
+                            >
+                              {cost > 0 ? `Unlock (${cost} XP)` : "Buka"}
+                            </button>
+                          ) : (
+                            <div className="mt-2 p-2 text-center text-xs text-slate-500">
+                              Buka hint sebelumnya dulu
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </div>
+
+                  <motion.div
+                    className="mt-4 p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-slate-300">
+                        <span className="text-yellow-400 font-semibold">XP Kamu:</span> {userXp} XP
+                      </p>
+                    </div>
+                  </motion.div>
                 </motion.div>
 
                 {/* Progress Stats */}

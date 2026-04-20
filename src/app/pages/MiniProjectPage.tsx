@@ -1,12 +1,55 @@
+import { useEffect, useState } from "react";
 import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { motion } from "motion/react";
-import { Link, useParams } from "react-router";
-import { ChevronRight, Rocket, Clock, Star, CheckCircle2, Code, Layout, Palette } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { ChevronRight, Rocket, Clock, Star, CheckCircle2, Code, Layout, Palette, AlertCircle } from "lucide-react";
+import { apiRequest } from "@/lib/api";
+import { useScrollToTop } from "@/lib/useScrollToTop";
+
+type MiniProject = {
+  id: number;
+  title: string;
+  xp: number;
+  subject: string;
+  subtopic: string;
+  difficulty: string;
+  type: string;
+  mini_materi: string;
+  code_html: string;
+  code_css: string;
+  code_js: string;
+  task: string;
+};
 
 export function MiniProjectPage() {
+  useScrollToTop();
   const { id } = useParams();
+  const [project, setProject] = useState<MiniProject | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const data = await apiRequest<MiniProject>(`/questions/${id}`);
+        if (data.type !== 'Mini Project Builder') {
+          setError('Proyek tidak ditemukan.');
+          return;
+        }
+        setProject(data);
+      } catch (err) {
+        setError((err as Error).message || 'Gagal memuat data proyek.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProject();
+    }
+  }, [id]);
 
   const projectTasks = [
     { id: 1, title: "Setup struktur HTML", completed: true },
@@ -15,6 +58,39 @@ export function MiniProjectPage() {
     { id: 4, title: "Tambahin grid fitur", completed: false },
     { id: 5, title: "Style footer", completed: false },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white relative">
+        <CosmicBackground />
+        <div className="relative z-10">
+          <Navigation />
+          <div className="pt-40 pb-20 px-4 text-center">
+            <p className="text-slate-400">Memuat proyek...</p>
+          </div>
+          <Footer />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white relative">
+        <CosmicBackground />
+        <div className="relative z-10">
+          <Navigation />
+          <div className="pt-40 pb-20 px-4 text-center">
+            <div className="max-w-md mx-auto rounded-2xl bg-red-500/20 border border-red-500/40 p-6 text-red-100">
+              <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+              <p>{error || 'Proyek tidak ditemukan.'}</p>
+            </div>
+          </div>
+          <Footer />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white relative">
@@ -30,11 +106,11 @@ export function MiniProjectPage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <Link to="/" className="hover:text-violet-400 transition-colors">
+              <Link to="/" className="hover:text-teal-400 transition-colors">
                 Beranda
               </Link>
               <ChevronRight className="w-4 h-4" />
-              <span className="text-violet-400">Mini Project #{id}</span>
+              <span className="text-teal-400">Mini Project: {project.title}</span>
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -42,38 +118,42 @@ export function MiniProjectPage() {
               <div className="lg:col-span-2 space-y-8">
                 {/* Header */}
                 <motion.div
-                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-8"
+                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-teal-500/20 rounded-2xl p-8"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm">
-                          Proyek Integrasi
+                        <div className="px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-sm">
+                          {project.type}
                         </div>
-                        <div className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-sm">
-                          Menengah
+                        <div className={`px-3 py-1 rounded-full text-sm border ${{
+                          'Mudah': 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300',
+                          'Sedang': 'bg-amber-500/20 border-amber-500/30 text-amber-300',
+                          'Sulit': 'bg-rose-500/20 border-rose-500/30 text-rose-300'
+                        }[project.difficulty] || 'bg-slate-500/20 border-slate-500/30 text-slate-300'}`}>
+                          {project.difficulty}
                         </div>
                       </div>
                       <h1 className="text-4xl font-bold mb-2">
-                        Bikin Landing Page dari Nol
+                        {project.title}
                       </h1>
                       <p className="text-slate-400">
-                        Buat <em>landing page</em> lengkap dengan integrasi semua konsep yang udah dipelajari
+                        {project.subtopic}
                       </p>
                     </div>
                     <div className="flex flex-col items-center gap-1">
-                      <Rocket className="w-8 h-8 text-cyan-400" />
-                      <span className="text-2xl font-bold text-cyan-400">200</span>
+                      <Rocket className="w-8 h-8 text-teal-400" />
+                      <span className="text-2xl font-bold text-teal-400">{project.xp}</span>
                       <span className="text-xs text-slate-400">Poin XP</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6 pt-4 border-t border-violet-500/20">
+                  <div className="flex items-center gap-6 pt-4 border-t border-teal-500/20">
                     <div className="flex items-center gap-2 text-slate-400">
                       <Clock className="w-5 h-5" />
-                      <span>2-3 jam</span>
+                      <span>{project.subject}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-400">
                       <CheckCircle2 className="w-5 h-5" />
@@ -84,44 +164,20 @@ export function MiniProjectPage() {
 
                 {/* Project Brief */}
                 <motion.div
-                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-8"
+                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-teal-500/20 rounded-2xl p-8"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                 >
                   <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <Rocket className="w-6 h-6 text-cyan-400" />
+                    <Rocket className="w-6 h-6 text-teal-400" />
                     Brief Proyek
                   </h2>
                   <div className="space-y-4 text-slate-300">
-                    <p>
-                      Bikin <em>landing page</em> profesional buat produk atau layanan fiktif. Proyek ini 
-                      integrasikan struktur HTML, styling CSS, <em>responsive design</em>, dan prinsip desain web modern.
-                    </p>
+                    <div dangerouslySetInnerHTML={{ __html: project.mini_materi }} />
                     <div>
-                      <h3 className="font-semibold text-white mb-2">Tujuan Proyek:</h3>
-                      <ul className="list-disc list-inside space-y-2 ml-4">
-                        <li>Bikin struktur semantik HTML dengan section header, hero, features, dan footer</li>
-                        <li>Implementasi <em>layout responsive</em> yang work di desktop dan mobile</li>
-                        <li>Terapkan CSS Grid dan Flexbox buat manajemen <em>layout</em></li>
-                        <li>Pakai <em>gradient</em>, <em>shadow</em>, dan teknik desain modern</li>
-                        <li>Tambahin <em>smooth scroll</em> dan efek <em>hover</em></li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white mb-2">Konsep yang Diterapkan:</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {["Semantic HTML", "CSS Grid", "Flexbox", "Responsive Design", "Gradients", "Animations"].map(
-                          (concept) => (
-                            <span
-                              key={concept}
-                              className="px-3 py-1 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 text-sm"
-                            >
-                              {concept}
-                            </span>
-                          )
-                        )}
-                      </div>
+                      <h3 className="font-semibold text-white mb-2">Deskripsi Task:</h3>
+                      <p>{project.task}</p>
                     </div>
                   </div>
                 </motion.div>

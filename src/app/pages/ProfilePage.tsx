@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { User, Mail, MapPin, Calendar, Award, Trophy, Star, Edit2, Settings } from "lucide-react";
 import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
-import { apiRequest, getAuthToken, removeAuthToken, type UserProfile } from "@/lib/api";
+import { apiRequest, getAuthToken, removeAuthToken, saveUserProfile, type UserProfile } from "@/lib/api";
+import { useScrollToTop } from "@/lib/useScrollToTop";
 
 export function ProfilePage() {
+  useScrollToTop();
   const navigate = useNavigate();
   const [userData, setUserData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editFormData, setEditFormData] = useState<{ name: string; institution: string }>({ 
+    name: "", 
+    institution: "" 
+  });
 
   useEffect(() => {
     const token = getAuthToken();
@@ -26,6 +34,13 @@ export function ProfilePage() {
     })
       .then((data) => {
         setUserData(data.user);
+        // Initialize edit form with user data
+        setEditFormData({ 
+          name: data.user.name || "", 
+          institution: data.user.institution || "" 
+        });
+        // Cache user profile locally
+        saveUserProfile(data.user);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Gagal memuat profil.");
@@ -34,6 +49,75 @@ export function ProfilePage() {
         setLoading(false);
       });
   }, []);
+
+  const handleSaveProfile = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setError("Sesi login Anda sudah berakhir. Silakan login kembali.");
+      setIsEditingProfile(false);
+      return;
+    }
+
+    // Validate form data
+    const trimmedName = editFormData.name?.trim() || "";
+    const trimmedInstitution = editFormData.institution?.trim() || "";
+
+    if (!trimmedName) {
+      setError("Nama tidak boleh kosong.");
+      return;
+    }
+
+    if (!trimmedInstitution) {
+      setError("Institusi tidak boleh kosong.");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(""); // Clear previous errors
+    try {
+      const response = await apiRequest<{ message: string; user: UserProfile }>("/user/profile", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: trimmedName,
+          institution: trimmedInstitution,
+        }),
+      });
+      
+      // Update local state with response data
+      if (response && response.user) {
+        setUserData(response.user);
+        setEditFormData({
+          name: response.user.name,
+          institution: response.user.institution,
+        });
+        // Cache updated profile
+        saveUserProfile(response.user);
+        setIsEditingProfile(false);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Gagal menyimpan profil.";
+      setError(errorMessage);
+      console.error("Save profile error:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle edit mode toggle
+  const toggleEditMode = () => {
+    if (isEditingProfile) {
+      // Reset form data when canceling edit
+      if (userData) {
+        setEditFormData({
+          name: userData.name,
+          institution: userData.institution,
+        });
+      }
+    }
+    setIsEditingProfile(!isEditingProfile);
+    setError(""); // Clear error when toggling edit mode
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 text-white relative">
@@ -79,7 +163,20 @@ export function ProfilePage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h1 className="text-3xl font-bold mb-2">{userData.name}</h1>
+                            <h1 className="text-3xl font-bold mb-2">
+                              {isEditingProfile ? (
+                                <input
+                                  type="text"
+                                  value={editFormData.name || ""}
+                                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                  placeholder="Masukkan nama"
+                                  className="w-full bg-slate-800/50 border border-violet-500/30 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:border-violet-500/60"
+                                  autoFocus
+                                />
+                              ) : (
+                                userData?.name
+                              )}
+                            </h1>
                             <div className="flex items-center gap-2 mb-2">
                               <span className="px-3 py-1 bg-violet-500/20 border border-violet-500/30 rounded-full text-sm font-semibold text-violet-300">
                                 {userData.rank}
@@ -87,9 +184,19 @@ export function ProfilePage() {
                             </div>
                           </div>
 
-                          <button className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-violet-500/30 rounded-lg hover:bg-slate-800 hover:border-violet-500/50 transition-all">
+                          <button
+                            onClick={() => {
+                              if (isEditingProfile) {
+                                handleSaveProfile();
+                              } else {
+                                toggleEditMode();
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-violet-500/30 rounded-lg hover:bg-slate-800 hover:border-violet-500/50 transition-all disabled:opacity-50"
+                          >
                             <Edit2 className="w-4 h-4" />
-                            Edit Profile
+                            {isEditingProfile ? (isSaving ? "Menyimpan..." : "Simpan") : "Edit Profile"}
                           </button>
                         </div>
 
@@ -104,7 +211,17 @@ export function ProfilePage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-violet-400" />
-                            <span className="text-sm">{userData.institution}</span>
+                            {isEditingProfile ? (
+                              <input
+                                type="text"
+                                value={editFormData.institution || ""}
+                                onChange={(e) => setEditFormData({ ...editFormData, institution: e.target.value })}
+                                placeholder="Institusi"
+                                className="text-sm bg-slate-800/50 border border-violet-500/30 rounded px-2 py-1 text-white placeholder-slate-400 focus:outline-none focus:border-violet-500/60 flex-1"
+                              />
+                            ) : (
+                              <span className="text-sm">{userData?.institution}</span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-violet-400" />
@@ -210,8 +327,11 @@ export function ProfilePage() {
                         <span className="text-sm">Ubah Password</span>
                         <Edit2 className="w-4 h-4 text-slate-400" />
                       </button>
-                      <button className="w-full flex items-center justify-between p-3 bg-slate-800/30 rounded-lg border border-slate-700/30 hover:bg-slate-800/50 hover:border-violet-500/30 transition-all">
-                        <span className="text-sm">Edit Informasi Profil</span>
+                      <button
+                        onClick={() => toggleEditMode()}
+                        className="w-full flex items-center justify-between p-3 bg-slate-800/30 rounded-lg border border-slate-700/30 hover:bg-slate-800/50 hover:border-violet-500/30 transition-all"
+                      >
+                        <span className="text-sm">{isEditingProfile ? "Batal Edit" : "Edit Informasi Profil"}</span>
                         <Edit2 className="w-4 h-4 text-slate-400" />
                       </button>
                       <button

@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Rocket, Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { apiRequest, saveAuthToken, saveUserProfile } from "@/lib/api";
 

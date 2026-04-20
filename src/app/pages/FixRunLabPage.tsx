@@ -3,7 +3,7 @@ import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { motion } from "motion/react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { Clock, Target, Star, ChevronRight, Code, Lightbulb, Play, Trophy } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 

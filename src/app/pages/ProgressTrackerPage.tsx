@@ -3,7 +3,6 @@ import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { motion } from "motion/react";
-import { Link } from "react-router";
 import { Trophy, Star, TrendingUp, Target, Rocket, Zap, Award, ChevronRight } from "lucide-react";
 import { apiRequest, getAuthToken } from "@/lib/api";
 
@@ -449,28 +448,7 @@ export function ProgressTrackerPage() {
                   </div>
                 </motion.div>
 
-                <motion.div
-                  className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border border-violet-500/20 rounded-2xl p-6"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <h3 className="text-xl font-bold mb-4">Aksi Cepat</h3>
-                  <div className="space-y-3">
-                    <Link
-                      to="/challenge/1"
-                      className="block w-full px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition-all text-center"
-                    >
-                      Ambil Tantangan
-                    </Link>
-                    <Link
-                      to="/mini-project/1"
-                      className="block w-full px-4 py-3 bg-slate-800/50 border border-violet-500/30 rounded-lg font-semibold hover:bg-slate-800/70 transition-all text-center"
-                    >
-                      Mulai Mini Project
-                    </Link>
-                  </div>
-                </motion.div>
+
               </div>
             )}
           </div>

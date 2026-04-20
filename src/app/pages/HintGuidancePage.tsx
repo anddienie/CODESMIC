@@ -2,7 +2,7 @@ import { Navigation } from "../components/Navigation";
 import { Footer } from "../components/Footer";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { motion } from "motion/react";
-import { Link, useParams } from "react-router";
+import { Link, useParams } from "react-router-dom";
 import { ChevronRight, Lightbulb, Lock, Unlock, Sparkles, ArrowRight, Code, Eye } from "lucide-react";
 import { useState } from "react";
 

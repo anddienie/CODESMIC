@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { Sparkles, Rocket } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function HeroSection() {

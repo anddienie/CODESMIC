@@ -1,19 +1,25 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 import db from '../db.js';
 
+dotenv.config();
+
 const router = express.Router();
-const tokens = new Map();
+const JWT_SECRET = process.env.JWT_SECRET || 'codesmic_secret_key_2026_keep_it_safe';
 
 function createToken(userId) {
-  const token = crypto.randomUUID();
-  tokens.set(token, userId);
-  return token;
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 export function getUserIdFromToken(token) {
-  return tokens.get(token);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId;
+  } catch (error) {
+    return null;
+  }
 }
 
 router.post('/register', async (req, res) => {

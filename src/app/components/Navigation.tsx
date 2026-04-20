@@ -1,14 +1,26 @@
-import { Link, useLocation } from "react-router";
-import { Home, Rocket, TrendingUp, User, LogIn } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, Rocket, TrendingUp, User, LogIn, LogOut } from "lucide-react";
+import { getAuthToken, removeAuthToken } from "@/lib/api";
+import { useState, useEffect } from "react";
 
 export function Navigation() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    setIsLoggedIn(!!token);
+    setIsMenuOpen(false); // Close menu when location changes
+  }, [location]);
 
   const navItems = [
     { path: "/", label: "Beranda", icon: Home },
     { path: "/learning", label: "Pembelajaran", icon: Rocket },
     { path: "/progress", label: "Progress Tracker", icon: TrendingUp },
-    { path: "/profile", label: "Profile", icon: User },
+    // Only show Profile in nav if NOT logged in - when logged in, use dropdown instead
+    ...(isLoggedIn ? [] : [{ path: "/profile", label: "Profile", icon: User }]),
   ];
 
   return (
@@ -47,14 +59,49 @@ export function Navigation() {
               );
             })}
 
-            {/* Login/Auth Button */}
-            <Link
-              to="/auth"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all"
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden md:inline">Login</span>
-            </Link>
+            {/* Login/Auth Button or User Menu */}
+            {isLoggedIn ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden md:inline">Profile</span>
+                </button>
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-900/95 border border-violet-500/30 rounded-lg shadow-lg overflow-hidden z-50">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-3 text-sm text-slate-300 hover:bg-violet-500/20 hover:text-violet-300 transition-all"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Lihat Profil
+                    </Link>
+                    <button
+                      onClick={() => {
+                        removeAuthToken();
+                        setIsLoggedIn(false);
+                        setIsMenuOpen(false);
+                        navigate("/");
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/20 transition-all flex items-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/auth"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg font-semibold text-sm shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden md:inline">Login</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

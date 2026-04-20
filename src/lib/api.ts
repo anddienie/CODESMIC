@@ -19,11 +19,11 @@ export type ApiError = {
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}) {
   const response = await fetch(`/api${path}`, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   const body = await response.json().catch(() => ({}));
